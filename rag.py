@@ -10,6 +10,9 @@ from pypdf import PdfReader
 
 BOT_NAME = "ZainBot"
 
+# Backup Gemini models used automatically when the main model is busy.
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+
 SYSTEM_PROMPT = f"""You are {BOT_NAME}, the personal AI assistant of Muhammad Zain, a software engineer from Lahore, Pakistan.
 You answer questions about Zain's education, experience, projects, skills, teaching and interests.
 
@@ -87,7 +90,7 @@ def chunk_text(text, source, max_chars=650, overlap_lines=2):
 # ---------- 3. Knowledge base (embeddings + FAISS) ----------
 class KnowledgeBase:
     def __init__(self, api_key, data_dir="data",
-                 embed_model="gemini-embedding-001", chat_model="gemini-2.5-flash"):
+                 embed_model="gemini-embedding-001", chat_model="gemini-3.5-flash-lite"):
         from google import genai  # imported here so tests can run without the SDK
 
         self.client = genai.Client(api_key=api_key)
@@ -152,17 +155,24 @@ class KnowledgeBase:
         config = types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT, temperature=0.3, max_output_tokens=800
         )
+        # Try the main model first; if it is busy (503/429) or unavailable, fall back to the next one.
+        models = [self.chat_model] + [m for m in FALLBACK_MODELS if m != self.chat_model]
         resp = None
-        for attempt in range(6):  # retry when the model is busy (503) or rate limited (429)
-            try:
-                resp = self.client.models.generate_content(
-                    model=self.chat_model, contents=contents, config=config
-                )
+        for model in models:
+            for attempt in range(3):
+                try:
+                    resp = self.client.models.generate_content(
+                        model=model, contents=contents, config=config
+                    )
+                    break
+                except Exception as e:
+                    msg = str(e)
+                    if any(x in msg for x in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED")):
+                        time.sleep(2 * (attempt + 1))
+                        continue
+                    break  # e.g. 404 model not found: move on to the next model
+            if resp is not None:
                 break
-            except Exception as e:
-                msg = str(e)
-                busy = any(x in msg for x in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"))
-                if not busy or attempt == 5:
-                    raise
-                time.sleep(3 * (attempt + 1))
+        if resp is None:
+            return "The AI model is very busy right now. Please try again in a minute.", hits
         return (resp.text or "Sorry, I could not generate an answer."), hits
