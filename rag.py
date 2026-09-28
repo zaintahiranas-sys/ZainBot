@@ -149,11 +149,20 @@ class KnowledgeBase:
         prompt = f"CONTEXT:\n{context}\n\nQUESTION: {question}"
         contents.append(types.Content(role="user", parts=[types.Part(text=prompt)]))
 
-        resp = self.client.models.generate_content(
-            model=self.chat_model,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT, temperature=0.3, max_output_tokens=800
-            ),
+        config = types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT, temperature=0.3, max_output_tokens=800
         )
+        resp = None
+        for attempt in range(6):  # retry when the model is busy (503) or rate limited (429)
+            try:
+                resp = self.client.models.generate_content(
+                    model=self.chat_model, contents=contents, config=config
+                )
+                break
+            except Exception as e:
+                msg = str(e)
+                busy = any(x in msg for x in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"))
+                if not busy or attempt == 5:
+                    raise
+                time.sleep(3 * (attempt + 1))
         return (resp.text or "Sorry, I could not generate an answer."), hits
