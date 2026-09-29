@@ -1,4 +1,4 @@
-"""ZainBot RAG pipeline: load -> clean -> chunk -> embed -> FAISS -> retrieve -> generate."""
+"""ZainUzairBot RAG pipeline: load -> clean -> chunk -> embed -> FAISS -> retrieve -> generate."""
 import os
 import re
 import time
@@ -8,7 +8,7 @@ import numpy as np
 from docx import Document
 from pypdf import PdfReader
 
-BOT_NAME = "ZainBot"
+BOT_NAME = "ZainUzairBot"
 
 # Backup Gemini models used automatically when the main model is busy.
 FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]

@@ -44,12 +44,13 @@ with st.sidebar:
     samples = [
         "Who is Muhammad Zain?",
         "What projects has Zain built?",
-        "What are his technical skills?",
-        "Where does he work and what does he study?",
-        "Tell me about his NLP project.",
+        "What are Zain's technical skills?",
+        "Where does Zain work and what does he study?",
+        "Tell me about Zain's NLP project.",
         "Who is Uzair Bin Ahmad?",
         "What are Uzair's technical skills?",
         "What projects has Uzair built?",
+        "What does Uzair study?",
     ]
     clicked = None
     for s in samples:
