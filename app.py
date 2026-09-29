@@ -22,24 +22,24 @@ if not api_key:
     st.stop()
 
 
-@st.cache_resource(show_spinner="Reading Zain's documents and building the index...")
+@st.cache_resource(show_spinner="Reading the CVs and building the index...")
 def load_kb():
     return KnowledgeBase(
         api_key=api_key,
         data_dir="data",
         embed_model=get_setting("EMBED_MODEL", "gemini-embedding-001"),
-        chat_model=get_setting("CHAT_MODEL", "gemini-2.5-flash"),
+        chat_model=get_setting("CHAT_MODEL", "gemini-3.5-flash-lite"),
     )
 
 
 kb = load_kb()
 
 st.title(f"🤖 {BOT_NAME}")
-st.caption("Ask me anything about Muhammad Zain: education, experience, projects and skills.")
+st.caption("Ask me about Muhammad Zain or Uzair Bin Ahmad: education, experience, projects and skills.")
 
 with st.sidebar:
     st.header(BOT_NAME)
-    st.write("A RAG chatbot built on Zain's CV and resume.")
+    st.write("A RAG chatbot built on the CVs of Muhammad Zain and Uzair Bin Ahmad.")
     st.subheader("Try asking")
     samples = [
         "Who is Muhammad Zain?",
@@ -47,6 +47,9 @@ with st.sidebar:
         "What are his technical skills?",
         "Where does he work and what does he study?",
         "Tell me about his NLP project.",
+        "Who is Uzair Bin Ahmad?",
+        "What are Uzair's technical skills?",
+        "What projects has Uzair built?",
     ]
     clicked = None
     for s in samples:
